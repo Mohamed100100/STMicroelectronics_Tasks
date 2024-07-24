@@ -16,7 +16,7 @@ so we have 4 output files
 3- static_myProg
 4- noStatic_myProg
 
-#Symbol Table
+# Symbol Table
 
 the next step we start to see the ST for the four output file by this command
 
@@ -25,7 +25,7 @@ the next step we start to see the ST for the four output file by this command
 >> readelf -s static_myProg
 >> readelf -s noStatic_myProg
 
-#Section Size
+# Section Size
 
 the next step we start to see the .data and .text size for the four output file by this commands
 
