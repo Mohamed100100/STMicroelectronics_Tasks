@@ -1,0 +1,141 @@
+vboxuser@gemy:~/Desktop/ST_WorkSpace/DAY2$ readelf -S noStatic_myProg 
+There are 31 section headers, starting at offset 0x37f8:
+
+Section Headers:
+  [Nr] Name              Type             Address           Offset
+       Size              EntSize          Flags  Link  Info  Align
+  [ 0]                   NULL             0000000000000000  00000000
+       0000000000000000  0000000000000000           0     0     0
+  [ 1] .interp           PROGBITS         0000000000000318  00000318
+       000000000000001c  0000000000000000   A       0     0     1
+  [ 2] .note.gnu.pr[...] NOTE             0000000000000338  00000338
+       0000000000000030  0000000000000000   A       0     0     8
+  [ 3] .note.gnu.bu[...] NOTE             0000000000000368  00000368
+       0000000000000024  0000000000000000   A       0     0     4
+  [ 4] .note.ABI-tag     NOTE             000000000000038c  0000038c
+       0000000000000020  0000000000000000   A       0     0     4
+  [ 5] .gnu.hash         GNU_HASH         00000000000003b0  000003b0
+       0000000000000024  0000000000000000   A       6     0     8
+  [ 6] .dynsym           DYNSYM           00000000000003d8  000003d8
+       00000000000000a8  0000000000000018   A       7     1     8
+  [ 7] .dynstr           STRTAB           0000000000000480  00000480
+       000000000000008f  0000000000000000   A       0     0     1
+  [ 8] .gnu.version      VERSYM           0000000000000510  00000510
+       000000000000000e  0000000000000002   A       6     0     2
+  [ 9] .gnu.version_r    VERNEED          0000000000000520  00000520
+       0000000000000030  0000000000000000   A       7     1     8
+  [10] .rela.dyn         RELA             0000000000000550  00000550
+       00000000000000c0  0000000000000018   A       6     0     8
+  [11] .rela.plt         RELA             0000000000000610  00000610
+       0000000000000018  0000000000000018  AI       6    24     8
+  [12] .init             PROGBITS         0000000000001000  00001000
+       000000000000001b  0000000000000000  AX       0     0     4
+  [13] .plt              PROGBITS         0000000000001020  00001020
+       0000000000000020  0000000000000010  AX       0     0     16
+  [14] .plt.got          PROGBITS         0000000000001040  00001040
+       0000000000000010  0000000000000010  AX       0     0     16
+  [15] .plt.sec          PROGBITS         0000000000001050  00001050
+       0000000000000010  0000000000000010  AX       0     0     16
+  [16] .text             PROGBITS         0000000000001060  00001060
+       000000000000020e  0000000000000000  AX       0     0     16
+  [17] .fini             PROGBITS         0000000000001270  00001270
+       000000000000000d  0000000000000000  AX       0     0     4
+  [18] .rodata           PROGBITS         0000000000002000  00002000
+       0000000000000108  0000000000000000   A       0     0     4
+  [19] .eh_frame_hdr     PROGBITS         0000000000002108  00002108
+       000000000000003c  0000000000000000   A       0     0     4
+  [20] .eh_frame         PROGBITS         0000000000002148  00002148
+       00000000000000cc  0000000000000000   A       0     0     8
+  [21] .init_array       INIT_ARRAY       0000000000003db8  00002db8
+       0000000000000008  0000000000000008  WA       0     0     8
+  [22] .fini_array       FINI_ARRAY       0000000000003dc0  00002dc0
+       0000000000000008  0000000000000008  WA       0     0     8
+  [23] .dynamic          DYNAMIC          0000000000003dc8  00002dc8
+       00000000000001f0  0000000000000010  WA       7     0     8
+  [24] .got              PROGBITS         0000000000003fb8  00002fb8
+       0000000000000048  0000000000000008  WA       0     0     8
+  [25] .data             PROGBITS         0000000000004000  00003000
+       000000000000001c  0000000000000000  WA       0     0     8
+  [26] .bss              NOBITS           000000000000401c  0000301c
+       000000000000000c  0000000000000000  WA       0     0     4
+  [27] .comment          PROGBITS         0000000000000000  0000301c
+       000000000000002b  0000000000000001  MS       0     0     1
+  [28] .symtab           SYMTAB           0000000000000000  00003048
+       0000000000000438  0000000000000018          29    21     8
+  [29] .strtab           STRTAB           0000000000000000  00003480
+       0000000000000258  0000000000000000           0     0     1
+  [30] .shstrtab         STRTAB           0000000000000000  000036d8
+       000000000000011a  0000000000000000           0     0     1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings), I (info),
+  L (link order), O (extra OS processing required), G (group), T (TLS),
+  C (compressed), x (unknown), o (OS specific), E (exclude),
+  D (mbind), l (large), p (processor specific)
+
+-------------------------------------------------------------------------------
+vboxuser@gemy:~/Desktop/ST_WorkSpace/DAY2$ size noStatic_myProg 
+   text	   data	    bss	    dec	    hex	filename
+   1927	    612	     12	   2551	    9f7	noStatic_myProg
+
+-------------------------------------------------------------------------------
+vboxuser@gemy:~/Desktop/ST_WorkSpace/DAY2$ objdump -h noStatic_myProg 
+
+noStatic_myProg:     file format elf64-x86-64
+
+Sections:
+Idx Name          Size      VMA               LMA               File off  Algn
+  0 .interp       0000001c  0000000000000318  0000000000000318  00000318  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  1 .note.gnu.property 00000030  0000000000000338  0000000000000338  00000338  2**3
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  2 .note.gnu.build-id 00000024  0000000000000368  0000000000000368  00000368  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  3 .note.ABI-tag 00000020  000000000000038c  000000000000038c  0000038c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  4 .gnu.hash     00000024  00000000000003b0  00000000000003b0  000003b0  2**3
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  5 .dynsym       000000a8  00000000000003d8  00000000000003d8  000003d8  2**3
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  6 .dynstr       0000008f  0000000000000480  0000000000000480  00000480  2**0
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  7 .gnu.version  0000000e  0000000000000510  0000000000000510  00000510  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  8 .gnu.version_r 00000030  0000000000000520  0000000000000520  00000520  2**3
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  9 .rela.dyn     000000c0  0000000000000550  0000000000000550  00000550  2**3
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 10 .rela.plt     00000018  0000000000000610  0000000000000610  00000610  2**3
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 11 .init         0000001b  0000000000001000  0000000000001000  00001000  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 12 .plt          00000020  0000000000001020  0000000000001020  00001020  2**4
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 13 .plt.got      00000010  0000000000001040  0000000000001040  00001040  2**4
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 14 .plt.sec      00000010  0000000000001050  0000000000001050  00001050  2**4
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 15 .text         0000020e  0000000000001060  0000000000001060  00001060  2**4
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 16 .fini         0000000d  0000000000001270  0000000000001270  00001270  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+ 17 .rodata       00000108  0000000000002000  0000000000002000  00002000  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 18 .eh_frame_hdr 0000003c  0000000000002108  0000000000002108  00002108  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 19 .eh_frame     000000cc  0000000000002148  0000000000002148  00002148  2**3
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+ 20 .init_array   00000008  0000000000003db8  0000000000003db8  00002db8  2**3
+                  CONTENTS, ALLOC, LOAD, DATA
+ 21 .fini_array   00000008  0000000000003dc0  0000000000003dc0  00002dc0  2**3
+                  CONTENTS, ALLOC, LOAD, DATA
+ 22 .dynamic      000001f0  0000000000003dc8  0000000000003dc8  00002dc8  2**3
+                  CONTENTS, ALLOC, LOAD, DATA
+ 23 .got          00000048  0000000000003fb8  0000000000003fb8  00002fb8  2**3
+                  CONTENTS, ALLOC, LOAD, DATA
+ 24 .data         0000001c  0000000000004000  0000000000004000  00003000  2**3
+                  CONTENTS, ALLOC, LOAD, DATA
+ 25 .bss          0000000c  000000000000401c  000000000000401c  0000301c  2**2
+                  ALLOC
+ 26 .comment      0000002b  0000000000000000  0000000000000000  0000301c  2**0
+                  CONTENTS, READONLY
+
