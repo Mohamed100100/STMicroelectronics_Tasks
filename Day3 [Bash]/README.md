@@ -21,7 +21,7 @@ This project is a simple shell program written in C that parses user input and t
 BASHA MASR :) >> pwd
 sh```
 prints the working directory
-
+```sh
 2. **echo**
 ```sh
 BASHA MASR :) >> echo Hello World
