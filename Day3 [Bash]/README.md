@@ -19,7 +19,7 @@ This project is a simple shell program written in C that parses user input and t
 1. **pwd**
 ```sh
 BASHA MASR :) >> pwd
-
+sh```
 prints the working directory
 
 2. **echo**
