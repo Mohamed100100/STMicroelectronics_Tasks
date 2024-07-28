@@ -18,5 +18,13 @@ This project is a simple shell program written in C that parses user input and t
 ### Commands
 1. **pwd**
 ```sh
->> pwd
+BASHA MASR :) >> pwd
+
+prints the working directory
+
+2. **echo**
+```sh
+BASHA MASR :) >> echo Hello World
+
+prints "Hello World" on the scren
 
