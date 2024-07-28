@@ -13,18 +13,4 @@ This project is a simple shell program written in C that parses user input and t
 - **exit**: Terminate the shell.
 - **help**: Print all supported commands with brief info about each.
 
-## Usage
-
-### Commands
-1. **pwd**
-```sh
-BASHA MASR :) >> pwd
-sh```
-prints the working directory
-```sh
-2. **echo**
-```sh
-BASHA MASR :) >> echo Hello World
-
-prints "Hello World" on the scren
 
