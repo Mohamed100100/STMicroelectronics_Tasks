@@ -19,4 +19,5 @@ This project is a simple shell program written in C that parses user input and t
 1. **pwd**
    >> pwd
 
-3. 
+```sh
+
