@@ -1404,6 +1404,7 @@ void vdPrintALLVarFunc( int lenth)
  */
 void vdPipeExecFunc(int pipenum ,char **token , int lenth)
 {
+	//i allocate this array to store the name of the commands on the pipe
 	int *startCommarr = (int *)malloc(sizeof(int));
 	startCommarr[0] = 0;
 	int t = 1;
