@@ -7,7 +7,7 @@
 
 #define COMMAND_LENGTH 1000
 #define COMMAND_NUMBER	15
-#define TOKEN_LENGTH	50
+
 
 //this macros is used for assign the status of the process
 #define EXIT_NORM	0
@@ -33,6 +33,12 @@ void vdUptimeFunc(int lenth);
 void vdADDlocalVarFunc(char **token , int lenth);
 void vdADDEnvVarFunc(char **token,int lenth);
 void vdPrintALLVarFunc( int lenth);
+void vdPipeExecFunc(int pipenum ,char **token , int lenth);
+int intIsRedirec(char **token,int lenth);
+void vdAddChildInfo(int PID,int ID,char *childname,int status);
+
+
+
 
 
 

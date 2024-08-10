@@ -13,9 +13,6 @@
 // the command is an array to recieve the command 
 char command[COMMAND_LENGTH] = {'\0'};
 
-// this is an array of pointers to characters, and used to store the command after be separated
-//char *token[OPTION_NUMBER];
-
 
 
 int main()
@@ -23,8 +20,6 @@ int main()
 	//this pointer will contain the array of string(tokens)
 	char **token = NULL;
 	
-	//we will use this pointer for rellocation the memory on the heap
-	char **temp  = NULL;
 	
 	char *ptr =NULL;
 	
@@ -33,9 +28,7 @@ int main()
 	
 	//arg_num will have the number of the given tokens
 	int arg_num = 0;
-
-	//this function is helper for "phist" command to allocate dynamic memory for command's table 
-	vdHelperForStat_initFunc();	
+	
 		
 		const char *red   = "\033[31m";
 		const char *blue  = "\033[34m";
@@ -44,7 +37,7 @@ int main()
 		
 	while(1)
 	{
-		
+		// this section is just for decoration and more organization		
 		write(STDOUT,red,strlen(red));
 		write(STDOUT,getenv("USER"),strlen(getenv("USER")));
 		write(STDOUT,":",strlen(":"));
@@ -62,29 +55,60 @@ int main()
 		if(ptr != NULL)
 		*ptr = '\0';
 				
+		// the dynamic memory allocation of the tokens
+		// i start to allocate one token >> only one string >> only one array of char
+		// next i use strtok funcion to know if there is another token 
+		// if there is , i will allocate another array of char to the next token and so on 
+		// i put extra token and make it equal NULL
+		// ex  >>  if the input command is "cp file1 file2"
+		// =====================================================
+        	// so      | token[0] | token[1] | token[2] | token[3] |
+        	// =====================================================
+        	//         [   "cp"   , "file1"  , "file2"  ,   NULL   ]
+        	// =====================================================
+
 		i = 0;
 		//allocate only one token 		
 		token = NULL;
-		while(token == NULL)
-                	{token  = (char **) malloc(sizeof(char *));}
-	
+                token  = (char **) malloc(sizeof(char *));
+		
+		//if there is a problem when allocating memory on the heap
+		//print error and exit from the program
+		if(token == NULL)
+		{
+			write(STDERR," error : there is problem while storing command on the heap\n",strlen(" error : there is problem while storing command on the heap\n"));
+			exit(0);
+		}
+
 	
 		/* this section is used to separate the command into tokens */
 		ptr = strtok(command," ");
 		token[0] = NULL;
+		
 		while(ptr!=NULL)
 		{
-			while(token[i] == NULL)
-	               		{token[i]  = (char *) malloc(TOKEN_LENGTH);}
-			
+			// Icase of there is anew token 
+			// we will allocate new array of chars 
+			// and copy to it the content of this token
+	               	token[i]  = (char *) malloc(strlen(ptr));
+			if(token[i] == NULL)
+	                {
+        	                write(STDERR," error : there is problem while storing command on the heap\n",strlen(" error : there is problem while storing command on the heap\n"));
+                	        exit(0);
+               		 }
+
 			//copy the content of the ptr to token[i]			
 			strcpy(token[i++],ptr);
 			
-			//allocate the next token
-			temp  = NULL;                    
-                        while( temp == NULL )
-                        	{temp =(char **)realloc(token, (i+2)*sizeof(char *));}
-			token = temp;
+
+			//allocate the next token			              
+                       	token= (char **)realloc(token, (i+2)*sizeof(char *));
+			if(token == NULL)
+                        {
+                                write(STDERR," error : there is problem while storing command on the heap\n",strlen(" error : there is problem while storing command on the heap\n"));
+                                exit(0);
+                         }
+ 
 			
 			//assign the new location to NULL
 			token[i] = NULL;
@@ -103,70 +127,56 @@ int main()
 		//if the user doesn't insert any thing(Press Enter) >> nothing will happen
 		if(token[0] != NULL)
 		{
-			//check of piping
-			//this if detect if the command has pipe or not
-		        //if there pipe >> execute two commands 
-		        //at the first we check at two conditions ( " | ls ") OR (" ls | ") one of the two commands are messing
-			if(!((strcmp(token[arg_num-1], "|")==0)||(strcmp(token[0], "|")==0)))
+			
+		        //after i get the command separated on the token array 
+			//first check will b check on the pipe 
+			
+			//we have many corner cases on the pipes we should avoid it (generally missing one of the command)
+		        //for ex >>  ( " | ls ") OR (" ls | ")  there is messing command
+			//also   >>  ( " ls | | grep out ") >> error (missing command)
+			
+			//at the first , i will check on this case ( " ls | | grep out ") 
+		        int flag = 1;
+		        for(int i = 0;i<arg_num-1;i++)
+               		{
+               			if((strcmp(token[i], "|")==0)&&(strcmp(token[i+1], "|")==0))
+               			{	
+               				flag = 0;
+               				break;
+				}               			
+               		}
+
+		        //here is the final check on the above corner cases
+			if(!((strcmp(token[arg_num-1], "|")==0)||
+			     (strcmp(token[0], "|")==0)||
+			     (flag == 0)))
         		{
      				//this variable count the number of "|" on the command
         			int pipcountr = 0;
         			
-        			//this varible get the index of the "|" on the command
-        			int pipelocat = 0;
+        			//check of piping
+				//this for loop detects if the command has pipe or not
+				//if there is pipe >> it will get the number of them
                			for(int i = 0;i<arg_num;i++)
                			{
                				if(strcmp(token[i], "|")==0)
                				{	
                					pipcountr++;
-						pipelocat = i;
 					}               			
                			}
-               			//incase of one pipe >> then start execute
-               			if(pipcountr == 1)
+               			
+               			//incase of pipe >> then start execute
+               			if(pipcountr > 0)
                			{
-               				//create the pipe
-               				int pipeFd[2];
-               				int ret = pipe(pipeFd);
-               				
-               				//first command will change the output to the pipe
-               				close(1);
-                                        dup2(pipeFd[1],1);
-                                        close(pipeFd[1]);
-                                        
-                                        //put NULL at the "|" place to separate two commands
-                                        token[pipelocat] = NULL;
-                                        //execute first command
-                                        vdExcCommand(token,pipelocat);
-                                        
-                                        //after that start to move the second command to be at the first 
-                                        for(int i = 1;i<=arg_num-pipelocat;i++)
-                                        {
-                                        	token[i-1] = token[pipelocat+i];
-                                        	token[pipelocat+i] = NULL;
-					}
-					
-					//second command will change the input to the pipe
-                                        close(0);
-                                        dup2(pipeFd[0],0);
-                                        close(pipeFd[0]);
-                                       
-                                       	//execute first command
-                                        vdExcCommand(token,arg_num-pipelocat-1);
+               				//Execute the pipe command with each length
+                                	vdPipeExecFunc(pipcountr ,token ,arg_num);
                                 }
                			else{
+               				//pipcountr = 0
                				//there is no piping
-               				if(pipcountr == 0)
-               				{
-						//Execute the normal command 	
-						vdExcCommand(token,arg_num);
-					}
-					//there is too much pipe "|"
-					else{
-               				write(STDERR, "error : too much pipe\n",strlen("error : too much pipe\n"));
-               				write(STDERR, "you can write \"myhelp\" command for help with Commands\n",strlen("you can write \"myhelpg\" command for help with commands\n"));
-               				}
-               			}
+               				//Execute the normal command 	
+					vdExcCommand(token,arg_num);
+				}					
        			}
         		else{
         		//incase of :-
@@ -189,8 +199,9 @@ int main()
 		}
 			else{
 			//nothing (Press Enter)
-			}	
-	}
+			}
+	}	
 }
+
 
 

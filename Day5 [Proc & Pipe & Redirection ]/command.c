@@ -51,35 +51,20 @@ static char Process_satatus[] = {'N','T','S','U'};
 
 //I will use them to implement the function "phist" 
 //which needs to store the children data
-//so this data should be global variable
-int   *ChildId    = NULL;
-int   *ChildState = NULL;
-char **ChildName  = NULL;
+//i will create array of this structure to contain the children data
+typedef struct
+{
+	char *ChildName  ;
+	int   ChildPID	 ;
+	int   ChildId    ;
+	int   ChildState ;
+	int   ChildExit  ;
+}child_info;
+
+child_info *child_info_arr = NULL;
 
 //the index of the child >> if ChildTblIndx = 3 so there are 3 childs are created 
 static int ChildTblIndx   = 0;
-
-//Max child number >> the code increases it according to the number of children (dynamicly)
-static int MaxlengthChild = 5; 
-
-/**
- * @brief Allocating  dynamic memory for the Table of children
- * This function attempts to help the phist function to allocate memory 
- * @param token : no input
- * @return : no return.
- */
-
-void vdHelperForStat_initFunc(void)
-{
-	while(ChildId == NULL)
-		ChildId    = (int *)   malloc(sizeof(int)*MaxlengthChild);
-	while(ChildState == NULL)
-		ChildState = (int *)   malloc(sizeof(int)*MaxlengthChild);
-	while(ChildName == NULL)
-		ChildName  = (char **) malloc(sizeof(char *)*MaxlengthChild);
-
-	ChildName[0] = "gemy";
-}
 
 /**
  * @brief Excute the needed command
@@ -106,7 +91,7 @@ void vdExcCommand(char **token,int lenth)
 	int var = 0;
 
 	//this if detect if the command has redirection or not
-	//if there refirec >> index = -4
+	//if there redirecion >> index = -4
 	//if not index = -3
 	//at the first we check at two conditions ( " > file_name " OR " ls > ") there is no command or there is no file_name
 	if(!((strcmp(token[lenth-1], ">")==0)||(strcmp(token[lenth-1], "<")==0)||(strcmp(token[lenth -1], "2>")==0)
@@ -333,8 +318,8 @@ void vdExcCommand(char **token,int lenth)
 		//do nothing
 		break;
 	default : // unsupported command 
-	write(STDERR, "\nerror : Unsupported Command\n",strlen("error : Unsupported Command\n\n"));
-        write(STDERR, "you can write \"myhelp\" command for help with Commands\n\n",strlen("you can write \"myhelpg\" command for help with commands\n"));
+	write(STDERR, "error : Unsupported Command\n",strlen("error : Unsupported Command\n"));
+        write(STDERR, "you can write \"myhelp\" command for help with Commands\n",strlen("you can write \"myhelp\" command for help with commands\n"));
 	break;
 	}
 
@@ -389,81 +374,25 @@ static int intExcuteExternComm(char **token)
 			//the wait is called by the parent and the parent code will stuck untill the all created  children call exit function (end all children processes)
 			wait(&status);
 			
-			//Normal Exit
-			if(WIFEXITED(status) == 1)
-			{
-				ChildState [ChildTblIndx] = EXIT_NORM;
-			}
-			else{	//Termenation By Signal
-				if(WIFSIGNALED(status) == 1)
-				{
-					ChildState [ChildTblIndx] = EXIT_TERM;
-				}
-				else
-				{
-					//Stopped By Signal
-					if(WIFSTOPPED(status) == 1)
-					{
-						ChildState [ChildTblIndx] = EXIT_STOP;
-					}
-					else
-					{	//Undetrmined >> I put it because it may be another kinds of signals
-						ChildState [ChildTblIndx] = EXIT_UNDEF;
-					}	
-				}
-			}
-
-			//store the Child Id
-			ChildId [ChildTblIndx]    = retPid;
-	
-			//store the name of the process		
-			ChildName[ChildTblIndx] = (char *)malloc(strlen(token[0]));
-			strcpy(ChildName[ChildTblIndx], token[0]);
-
-			//Increment the Number of children
-			ChildTblIndx++;
-		
-			// check if the size of dynamic array is full >> allocate larger Space
-			if(MaxlengthChild == ChildTblIndx)
-			{
-				MaxlengthChild = MaxlengthChild + 5;
-				 int *temp1  = NULL;
-				while( temp1 == NULL )
-					temp1 =(int *)realloc(ChildId,MaxlengthChild *sizeof(int));
-
-				
-				int *temp2  = NULL;
-                                while( temp2 == NULL )
-                                        temp2 =(int *) realloc(ChildState,MaxlengthChild *sizeof(int));
-
-				
-				char **temp3  = NULL;
-                                while( temp3 == NULL )
-                                       temp3 =(char **) realloc(ChildName,MaxlengthChild *sizeof(char *));
-			
-				
-				ChildId    = temp1;
-				ChildState = temp2;
-				ChildName  = temp3;
-			}
-			else{//nothing
-			}
+			vdAddChildInfo(getpid(),retPid,token[0],status);
 		
 		}
-
-
 		//child region
 		else if (retPid == 0)// if the fork point is created successfully the retPID = zero for the child
 		{// so this section will be executed by the created child only
 			
 	
 			execve(full_path,token, environ);
-			exit(0);
+			exit(-1);
 		}
 		else
 		{
 			perror("fork");
 		}
+	}
+	//unsuported command
+	else{
+		//do nothing
 	}
 	
 	//ret = -2 >> External command
@@ -471,6 +400,71 @@ static int intExcuteExternComm(char **token)
 	return (ret);
 }
 
+
+/**
+ * @brief Allocating  dynamic memory for the Table of children
+ * This function attempts to help the phist function to allocate memory and store the info of this childrens
+ * @param PID       : parent Id
+ * @param ID        : Child Id
+ * @param status    : exit status
+ * @param childname : child name 
+ * @return : no return.
+ */
+void vdAddChildInfo(int PID,int ID,char *childname,int status)
+{
+	if(ChildTblIndx == 0)
+	{
+        	//allocate one struct of child_info
+                child_info_arr = malloc(sizeof(child_info));
+
+	}
+	else{
+		//incase of it isn't the first allocate
+		//allocate the next index of the array of the struct
+		//allocate extra one struct of ChildTblIndx
+		child_info_arr = realloc(child_info_arr,(ChildTblIndx+1)*sizeof(child_info));
+	}
+	
+	//allocate the memory for the member of this struct
+        child_info_arr[ChildTblIndx].ChildName   =  malloc(sizeof(childname));
+
+	//assign values for the members of the structure
+	strcpy(child_info_arr[ChildTblIndx].ChildName,childname);
+	child_info_arr[ChildTblIndx].ChildPID  = PID;
+	child_info_arr[ChildTblIndx].ChildId   = ID ;
+//	child_info_arr[ChildTblIndx].ChildExit = status;
+
+	
+	if(WIFEXITED(status) == 1)
+	{       
+		child_info_arr[ChildTblIndx].ChildState = EXIT_NORM;
+		child_info_arr[ChildTblIndx].ChildExit  = WEXITSTATUS(status) ;
+	}
+               
+       	else{   //Termenation By Signal
+       
+		if(WIFSIGNALED(status) == 1)
+		{              
+			child_info_arr[ChildTblIndx].ChildState = EXIT_TERM;
+			child_info_arr[ChildTblIndx].ChildExit  = WIFSIGNALED(status) ;
+		}
+		else         
+		{
+			//Stopped By Signal
+			if(WIFSTOPPED(status) == 1)
+			{
+				child_info_arr[ChildTblIndx].ChildState = EXIT_STOP;
+				child_info_arr[ChildTblIndx].ChildExit  = WIFSTOPPED(status);
+			}
+			else
+			{       //Undetrmined >> I put it because it may be another kinds of signals
+				child_info_arr[ChildTblIndx].ChildState = EXIT_UNDEF;
+			}
+		}
+	}
+	ChildTblIndx++;
+	
+}
 
 /**
  * @brief Show The info of  Children 
@@ -486,13 +480,12 @@ void vidPhistFunc(int lenth)
 	{ 
 		write(STDOUT, "\n The Children data : \n",strlen("\n The Children data : \n"));
 		printf(" N >> Normal Exit\t T >> Terminated By Siganl\t S >> Stopped By Signal\t U >> Undetermined");
-		for(int i = 0;(i<ChildTblIndx)&&(i<10);i++)
+		for(int i = 0;(i<ChildTblIndx);i++)
 		{
 		
 		//	write(STDOUT, "\n The Children data : \n",strlen("\n The Children data : \n"));
-			printf("\n Child %d \t ID : %d \t Status : %c",i,ChildId[i],Process_satatus[ChildState[i]]);
-			printf("\tProcess Named : %s\n",ChildName[i]);
-				
+			printf("\n Child %d \t ID : %d \t PID : %d \t Status : %c %d",i,child_info_arr[i].ChildId,child_info_arr[i].ChildPID, Process_satatus[child_info_arr[i].ChildState],child_info_arr[i].ChildState);
+			printf("\tProcess Named : %s\n",child_info_arr[i].ChildName);				
 		}
 		printf("\n");
 	}
@@ -529,7 +522,7 @@ write(STDOUT, "7- cd     : change the working directory\n",strlen("7- cd     : c
 write(STDOUT, "8- envir  : print all  enviornment variables\n",strlen("8- envir  : print all  enviornment variables\n"));
 write(STDOUT, "9- type   : show the type of the command [Internal , External , UnSupported]\n",strlen("9- type   : show the type of the command [Internal , External , UnSupported]\n"));
 write(STDOUT, "10- phist : list the process with thier status \n",strlen("10- phist : list the process with thier status \n"));
-write(STDOUT, "11- free  : print RAM info (total , free , used) and swap info (total , free , used) \n",strlen("11- free  : print RAM info (total , free , used) and swap info (total , free , used) \n"));
+write(STDOUT, "11- myfree: print RAM info (total , free , used) and swap info (total , free , used) \n",strlen("11- myfree: print RAM info (total , free , used) and swap info (total , free , used) \n"));
 write(STDOUT, "12- myuptime : print the uptime on the system and idle time\n",strlen("12- myuptime : print the uptime on the system and idle time\n"));
 write(STDOUT, "13- addloc: create new local variable\n",strlen("13- addloc: create new local variable\n"));
 write(STDOUT, ">>>>>>>>>> \" addloc <Var_Name> = <Var_Value>> \"\n",strlen(">>>>>>>>>> \" addloc <Var_Name> = <Var_Value>> \"\n"));
@@ -539,8 +532,10 @@ write(STDOUT, "15- allVar: print environment variable and local\n",strlen("14- a
 write(STDOUT, "16- output redirection \" {command}  >  {output_file} \"\n",strlen("15- output redirection \" {command}  >  {output_file} \"\n"));
 write(STDOUT, "17- input redirection  \" {command}  <  {input_file} \"\n",strlen("16- input redirection   \" {command}  <  {input_file} \"\n"));
 write(STDOUT, "18- error redirection  \" {command} 2>  {error_file} \"\n",strlen("17- error redirection   \" {command} 2>  {error_file} \"\n"));
-write(STDOUT, "19- pipe way  \" {command_1} | {command_2} \"\n",strlen("18- pipe way  \" {command_1} | {command_2} \"\n"));
-
+write(STDOUT, "NOTE : you can do many redirection at the same command with different order [don't forget the spaces] \n",strlen("NOTE : you can do many redirection at the same command with different order [don't forget the spaces] \n"));
+write(STDOUT, "ex>>>>\" {command} 2> {error_file} > {output_file} < {input_file} \" \n",strlen("ex>>>>\" {command} 2> {error_file} > {output_file} < {input_file} \" \n"));
+write(STDOUT, "19- pipe way  \" {command_1} | {command_2} | {command_3} | ... | .....  \"\n",strlen("19- pipe way  \" {command_1} | {command_2} | {command_3} | ... | .....  \"\n"));
+write(STDOUT, "NOTE : You can do multi pipes but don't forget the separating spaces\n",strlen("NOTE : You can do multi pipes but don't forget the separating spaces\n"));
 	}
 	else // this prevents that the help command gets argument
 	{	
@@ -634,11 +629,19 @@ void vdEchoFunc(char **token,int lenth)
  */
 void vdCopyFunc(char **token,int lenth)
 {
+	// to avoid "mycp only"
 	if(lenth == 1)
 	{
 		write(STDERR, "mycp :error, missing src path and dest path\n",strlen("mycp :error, missing src path and dest path\n"));
 		return ;
 	}
+
+	if(lenth == 2)
+        {
+                write(STDERR, "mycp :error, missing dest path\n",strlen("mycp :error, missing dest path\n"));
+                return ;
+        }
+
 	//check if we will excute option or not 
 	int flag = strcmp(token[1], "-a");
 	
@@ -656,7 +659,6 @@ void vdCopyFunc(char **token,int lenth)
 		destpath = token[3];
 		need_arg = 4;
 		mode = O_CREAT|O_WRONLY|O_APPEND ;
-
 	}
 	else
 	{ 	//Normal copy
@@ -684,7 +686,7 @@ void vdCopyFunc(char **token,int lenth)
 			
 			//this condion to avoid "This path is directory"
 			//and create file with the same name of the srcfile 
-			if(errno == EISDIR)
+			if((errno == EISDIR)||(errno == EEXIST))
                         {
 				strcat(destpath, "/");
             	        	char *ptr = rindex(srcpath, '/');
@@ -692,12 +694,15 @@ void vdCopyFunc(char **token,int lenth)
                            	strcat(destpath, ptr);
                              	file_desc_dest = open(destpath,mode, S_IWUSR|S_IRUSR);
                         }
+
 			
 			//check on successfull opening or not for dst file
 			if(file_desc_dest==-1)
  		        {
  		        	write(STDERR, "(dest path) : ",strlen("(dest path) : "));
-				perror(token[0]);				
+				write(STDERR,token[0],strlen(token[0]));				
+				write(STDERR, " : file is existing\n",strlen(" : file is existing\n"));
+				errno = -1;
                		}
                 	else
                 	{
@@ -716,6 +721,13 @@ void vdCopyFunc(char **token,int lenth)
 			}	
 
 		}
+
+	}
+	else{
+		// Incase of too much tokens
+		write(STDERR,token[0],strlen(token[0]));
+                write(STDERR, " : too much argument\n",strlen(" : too much argument\n"));
+        
 
 	}
 }
@@ -743,6 +755,12 @@ void vdMoveFunc(char **token,int lenth)
                 return ;
         }
 
+	if(lenth == 2)
+        {
+        	write(STDERR, "mymv :error, missing dest path\n",strlen("mycp :error, missing dest path\n"));
+                return ;
+        }
+
 	//check if we will excute option or not
 	int flag = strcmp(token[1], "-f");
         if(flag == 0)
@@ -751,7 +769,7 @@ void vdMoveFunc(char **token,int lenth)
 		token[2] = token[3];
 		token[3] = NULL;
 		vdCopyFunc(token , 3);
-		if(errno == EEXIST)
+		if(errno == -1)
 		{
 			//if dest file is already exists,remove it
 			remove(token[2]);
@@ -767,7 +785,7 @@ void vdMoveFunc(char **token,int lenth)
         else
         {       //Normal move            
 		vdCopyFunc(token , 3);
-		if(errno == EEXIST){ 
+		 if(errno == -1){ 
 		//nothing to avoid deleting src file if dest file is already exists
 		}
 		else 	{remove(token[1]);}
@@ -893,7 +911,7 @@ void vdPrintEnvFunc(char **token ,int lenth)
 
 				write(STDERR, "envir : ",strlen("envir : "));
 				write(STDERR, token[1],strlen(token[1]));
-				write(STDERR, "doesn't exist in environment variables\n",strlen("doesn't exist in environment variables\n"));
+				write(STDERR, " : doesn't exist in environment variables\n",strlen(" : doesn't exist in environment variables\n"));
 			}
 			else{
 				//nothing 
@@ -916,9 +934,18 @@ void vdPrintEnvFunc(char **token ,int lenth)
  */
 void vdTypeFunc(char **token ,int lenth)
 {
+
         //Incase the user Enter two tokens
         if(lenth == 2)
-        {
+        {	
+		// I found that when i write " type / " it will produce >> external command
+		// so i avoid this corner case by this if statment
+		if(strcmp(token[1],"/") == 0)
+		{
+			write(STDOUT, token[1],strlen(token[1]));
+                        write(STDOUT, " : Unsupported command\n",strlen(": wUnsupported command\n"));
+			return;
+		}
 		int exist = 0;
 		int flag = -1;
 		//loop on the internal command and compare with input user command{token[1]}
@@ -1023,21 +1050,38 @@ void vdTypeFunc(char **token ,int lenth)
 static int intIsExt(char **token,char **retpath)
 {
 	int ret = 0;
+
+	//this flag is used for determine if the command is external or unsupported
+        int flag = 0;
+
+	//this array used to contain the full path of the excutable file of the command
+        char *full_path = NULL;
+
+	//if the input command is already full path 
+	//for ex >> " /usr/bin/ls "  OR "./shell.exe" so excute it directly 
+	//if not so search for it on PATH env
+	if((access(token[0], F_OK)) == 0)
+        {
+        	if(open(token[0],O_DIRECTORY)==-1)
+		{
+			flag = 1;
+			full_path = token[0];
+		}
+		else{
+			write(STDERR,token[0],strlen(token[0]));
+			write(STDERR," : Is a directory\n",strlen(" : Is a directory\n"));
+		}
+    	}   
+	else{
 	//I create this array of characters to contain the PATH variable value
 	 char path_env[300] ={'\0'};
 
         //I make copy from the PATH variable to avoid overwrite on it
         strcpy(path_env, getenv("PATH"));
 
-        //this flag is used for determine if the command is external or unsupported
-        int flag = 0;
-
         //this array of character is used to contain the tokens from PATH variable(separated by ':')
         char *token_path = NULL;
         token_path = strtok(path_env,":");
-
-        //this array used to contain the full path of the excutable file of the command
-        char *full_path = NULL;
 
         //this array , i used it to make the content of token is const because when i used it direct 
         //the strtoken doesn't work correctly
@@ -1069,6 +1113,7 @@ static int intIsExt(char **token,char **retpath)
 
                 //get the next token(path)
                 token_path = strtok(NULL,":");
+	}
 	}
 	if(flag == 1)
         {      
@@ -1270,7 +1315,10 @@ void vdADDlocalVarFunc(char **token , int lenth)
                 	{
                 	       	 if((strcmp(token[1],local_Var_arr[i].loc_name))==0)
 				 {
-				 	write(STDERR, "addloc : this variable is already exist\n",strlen("addloc : this variable is already exist\n"));
+				 	//write(STDERR, "addloc : this variable is already exist\n",strlen("addloc : this variable is already exist\n"));
+					local_Var_arr[i].loc_value = realloc(local_Var_arr[i].loc_value,sizeof(token[3]));
+					memset(local_Var_arr[i].loc_value,'\0',strlen(local_Var_arr[i].loc_value));
+					strcpy(local_Var_arr[i].loc_value,token[3]);
 					return;
 				 }
                	 	}
@@ -1345,3 +1393,354 @@ void vdPrintALLVarFunc( int lenth)
         }
 
 }
+
+/**
+ * @brief Execute the Pipe command 
+ * This function attemps to execute the pipe command with differnt number of the pipes
+ * @param lenth   : this contains the number of tokens from the user
+ * @param token   : this contains array of string (the command separated).
+ * @param pipenum : the number of pipes on the input command 
+ * @return : no return.
+ */
+void vdPipeExecFunc(int pipenum ,char **token , int lenth)
+{
+	
+	int strcmd = 0;
+	
+	char *full_path = NULL;
+
+	int p =0;
+
+	// i will allocate an array of integer to contain the file discreptors
+	// for ex >> if input command is " ls | grep out | sort "
+	// so we have two pipes so we will create two pipes p1{p1[0] > input AND p1[1] > output} and p2{p2[0] > input AND p2[1] > output}
+	// after that we will store the values of the file discriptors in form of :-
+	// [input for command 1, output from command 1,input for command 2, output from command ,input for command 3, output from command 3]
+	// =======================================================================
+	// so 	   | INComm1 | OUTComm1 | INComm2 | OUTComm2 | INComm3 | OUTComm3|
+	// =======================================================================
+	// pipeFd = [STDIN  ,  p1[1]   ,  p1[0]  ,  p2[1]   ,  p2[0]  ,  STDOUT ]
+	// =======================================================================
+	// to make it general case 
+	// at the first i allocate array of integers of lenth {2*numberOfPipes + STDIN + STDOUT}
+	int *pipeFd = (int *)malloc(sizeof(int)*(2*pipenum +2));
+
+	// this array used to extract the default STDIN and STDOUT
+	char arrstd[100]= {'\0'};
+        readlink("/proc/self/fd/2", arrstd, 100);
+	
+	//now i will assign the start and the end of the array to have STDIN and STDOUT file discreptors
+	pipeFd[2*pipenum +1] = open(arrstd,O_RDWR,S_IRWXU);
+	pipeFd[0] = pipeFd[2*pipenum +1];
+	
+	//now i will start to create the pipes according to the input argument of the function "pipenum"
+	//this for creates the pipes and also stores its file discreptors at the array "pipeFd" in the right order {which mentioned above}
+	int temp = 0;
+	int k = 1;
+	for(int i =0;i<pipenum;i++)
+	{
+		pipe(&pipeFd[k]);
+		temp = pipeFd[k] ;
+		pipeFd[k] = pipeFd[k+1];
+		pipeFd[k+1] = temp;
+		k=k+2;
+	}
+
+	// Now we will start to loop on the all tokens 
+	// don't forget according to the above example " ls | grep out | sort "
+	// =====================================================================================
+        // so      | token[0] | token[1] | token[2] | token[3] | token[4] | token[5] | token[6]|
+        // =====================================================================================
+        //  	   [   "ls"   ,   "|"    ,  "grep"  ,  "out"   ,    "|"   ,  "sort"  ,   NULL  ]
+        // =====================================================================================
+	// we have three commands >>> "ls"       and its lenth = 1
+	// 			  >>> "grep out" and its lenth = 2
+	// 			  >>> "sort"     and its lenth = 1
+	// we will put instead of the "|" NULL to separete this commands 			  
+
+	for(int j=0;j<=lenth;j++)
+	{
+		// i put this if to avoid segmantaion fault when strcmp function access the last token
+		// in our example it is token[6] which equal to NULL
+		if(j == lenth) {
+		
+			//i put at it any address and when enter the next if it will return again to be equal NULL
+			char *gemy = "|";
+			token[j] = gemy;
+		}
+		//we enter this if statment at the end of the command and execute it in a child using fork
+		if((strcmp(token[j],"|") == 0)||(j == lenth))
+		{
+			//we replace the "|" by NULL 
+			token[j] = NULL;
+			
+			// Now we will start forking and if we have two pipes >> three commands 
+			// so we will have 3 commands with 3 forks 
+			int retPid = fork();
+
+			//child part
+			if(retPid == 0)
+			{	
+				//redirection part
+				//redirect the input 
+				//varible "p" is an index to loop on the file discreptor array
+				//i create it above to be see on the parent and children also
+				//i increase it at the parent part to be seen on the next child
+				//the "strcmd" varible has the index of the start command 
+				//look at the above example
+				//its value will be >> 0 , 2 . 5
+				close(0);
+                                dup2(pipeFd[p],0);
+                                close(pipeFd[p]);
+
+				//redirection the output
+				close(1);
+                                dup2(pipeFd[++p],1);
+                                close(pipeFd[p]);
+
+				// after that we will close all extra opened file discreptors and pipes {on this child scope}
+				// and if we open "/proc/ {this child id} / fd"
+				// we will find also the three opened file discreptors 0,1,2 with suitable link
+				for(int i =1;i<=2*pipenum+1;i++)
+			        {
+              				 close(pipeFd[i]);
+        			}
+				
+				//i do this if to separete the external command to avoid extra forking 
+				//if the command is external the "intIsExt" function will return the full path of the command on the "full_path" variable
+				//internal or unsupported
+				if(intIsExt(&token[strcmd],&full_path) != 1)
+				{
+					//this function takes the lenth of the command 
+					//i calculate it by subtracting the current index "|" and the index of the start command  
+					vdExcCommand(&token[strcmd],j-strcmd);
+					exit(0);
+				}
+				//external command
+				else
+				{
+					// intIsPipe function checks if there is redirection " > OR < OR 2> " or not 
+					// if there is piping it will redirect it and return 1
+					// if there is not it will return 0
+					// if there is redirection and the file is not exist {Incase of the input redirecion} it will print error and return -1
+					if(intIsRedirec(&token[strcmd],j-strcmd) != -1)
+					{
+						execve(full_path,&token[strcmd], environ);
+ 						exit(0);
+					}
+					else{
+						exit(-1);
+					}
+				}
+			}
+			//parent part
+			else{
+				// the "j" variable refers to the "|" 
+				// and "strcmd" have the index of the command so it will be equal (j+1)
+				strcmd = j + 1;
+				//we said that "p" varible loops on the file discreptors array 
+				//we increase it on the parent to be seen on the parent and the children
+                        	p = p+2;
+				//continue fork the other child
+			}
+		}
+	}
+	
+	
+	// after that we will close all extra opened file discreptors and pipes {on this parent scope}
+        // and if we open "/proc/ {parent id} / fd"
+        // we will find also the three opened file discreptors 0,1,2 with suitable link >> its default values
+	for(int i =1;i<=2*pipenum+1;i++)
+	{
+		close(pipeFd[i]);
+	}
+	//loop untill all children finish thier work
+	while(wait(NULL)!=-1);
+
+}
+
+
+
+/**
+ * @brief Check on the redirection
+ * This function attemps to chick if the command has redirection or not 
+ * if it has redirection it will execute it and return 1
+ * if not it will return 0
+ * if there is redirection and the file is not exist {Incase of the input redirecion} it will print error and return -1
+ * @param lenth   : this contains the number of tokens from the user
+ * @param token   : this contains array of string (the command separated).
+ * @return : no return.
+ */
+int intIsRedirec(char **token,int lenth)
+{
+
+	int flag = 0;
+	int var = 0;
+	int newlen = 0;
+	int file = 0;
+
+	//this if detect if the command has redirection or not
+        //if there redirecion >> flag = 1
+        //if not flag = 0
+        //at the first we check at two conditions ( " > file_name " OR " ls > ") there is no command or there is no file_name
+        if(!((strcmp(token[lenth-1], ">")==0)||(strcmp(token[lenth-1], "<")==0)||(strcmp(token[lenth -1], "2>")==0)
+           ||(strcmp(token[0], ">")==0)||(strcmp(token[0], "<")== 0)||(strcmp(token[0], "2>")== 0)))
+        {
+                for(int i = 0;i<lenth;i++)
+                {
+                        //redirect the output 
+                        //we check in this case >>ex> " ls > < " >> error
+                        if((strcmp(token[i], ">")==0)&&(strcmp(token[i+1], "<")!=0)&&(strcmp(token[i+1], "2>")!=0))
+                        {
+                                //if we reach to this point so the output redirection is written well
+                                //remove the redirection from the tokens
+                                token[i] = NULL;
+                                //open or ceate the file 
+                                file = creat(token[i+1], S_IRWXU);
+                                //if success
+                                if(file != -1)
+                                {
+                                        // set the lenth of the command to the new lenth
+                                        // ex >> "ls > output"
+                                        // so the lenth = 3 and the newlen must = 1 after redirection
+                                        if(newlen == 0){newlen = i;}
+
+                                        //output redirection
+                                        close(1);
+                                        dup2(file,1);
+                                        close(file);
+
+                                        //remove the file from the tokens
+                                        token[++i]=NULL;
+
+                                        //incase of success redirection
+                                        flag = 1;//true redirect 
+
+                                        //i put this variable to count the redirection 
+                                        //for ex >> " ls > out1 file1 "
+                                        // it must give error because undetermined behavior
+                                        var = var +2;
+                                        continue;
+
+                                }
+                                else{
+                                        //in case failled to open
+                                        flag = -1;
+                                        break;
+                                }
+
+                        }
+                        //redirect the error 
+                        //we check in this case >>ex> " ls 2> < " >> error
+                        if((strcmp(token[i], "2>")==0)&&(strcmp(token[i+1], "<")!=0)&&(strcmp(token[i+1], ">")!=0))
+                        {
+                                //if we reach to this point so the error redirection command is written well
+                                //remove the redirection from the tokens
+				token[i] = NULL;
+                                //open or ceate the file 
+                                file = creat(token[i+1],S_IRWXU);
+                                //if success
+                                if(file != -1)
+                                {
+                                        // set the lenth of the command to the new lenth
+                                        // ex >> "pwd 2> error"
+                                        // so the lenth = 3 and the newlen must = 1 after redirection
+                                        if(newlen == 0){newlen = i;}
+
+                                        //error redirection
+                                        close(2);
+                                        dup2(file,2);
+                                        close(file);
+
+                                        //remove the file from the tokens
+                                        token[++i]=NULL;
+
+                                        //incase of success redirection
+                                        flag = 1;//true redirect 
+
+                                        //i put this variable to count the redirection
+                                        //for ex >> " pwd 2> err1 file1 "
+                                        // it must give error because undetermined behavior
+                                        var = var +2;
+
+                                        continue;
+                                }
+                                else{
+                                        //in case failled to open
+                                        flag = -1;
+                                        break;
+                                }
+
+                        }
+
+                        //redirect the input
+                        //we check in this case >>ex> " ls < 2> " >> error
+                        if((strcmp(token[i], "<")==0)&&(strcmp(token[i+1], "2>")!=0)&&(strcmp(token[i+1], ">")!=0))
+                        {
+                                //if we reach to this point so the input redirection command is written well
+                                //remove the redirection from the tokens
+                                token[i] = NULL;
+                                //open or ceate the file
+                                file = open(token[i+1], O_RDONLY,S_IRWXU);
+                                //if success
+                                if(file != -1)
+                                {
+
+                                        // set the lenth of the command to the new lenth
+                                        // ex >> "mypwd < input"
+                                        // so the lenth = 3 and the newlen must = 1 after redirection
+                                        if(newlen == 0){newlen = i;}
+
+                                        //input redirection
+                                        close(0);
+                                        dup2(file,0);
+                                        close(file);
+
+                                        //remove the file from the tokens
+                                        token[++i]=NULL;
+
+                                        //incase of success redirection
+                                        flag = 1;//true redirect 
+
+                                        //i put this variable to count the redirection
+                                        //for ex >> " mypwd < input file1 "
+                                        // it must give error because undetermined behavior
+                                        var = var +2;
+
+                                        continue;
+                                }
+                                else{
+                                        perror(token[i+1]);
+
+                                        //in case failled to open
+                                        //this return will exit from this function 
+                                        flag = -1 ;
+                                        break;
+                                }
+
+                        }
+                }
+
+        }
+        else{
+                // in case of no redirection
+                flag = 0 ;
+        }
+
+
+	// this if use the variable var which created above to capture this error
+	// " mypwd > output file "
+	// the lenth of this command = 4
+	// var variable = 2 (the number of redirection argument (> and output))
+	// newlen variable = 1 (it counts before the redirection(mypwd only))
+	// so the argument (file) will produce undetremined behavior
+	// so our check >> if (newlen + var) == lenth >> the command is written well
+	// the second part of the condition(flag == a) ensures that the command has redirection 
+	if(((newlen + var) != lenth)&&(flag == 1)) flag = 0;
+
+	// this condition set the lenth to the newlen
+	if (newlen != 0) lenth = newlen;
+
+	return flag;
+}
+
