@@ -1404,9 +1404,16 @@ void vdPrintALLVarFunc( int lenth)
  */
 void vdPipeExecFunc(int pipenum ,char **token , int lenth)
 {
+	int *startCommarr = (int *)malloc(sizeof(int));
+	startCommarr[0] = 0;
+	int t = 1;
 	
 	int strcmd = 0;
 	
+	int status = 0;
+
+	int retPid =0;
+
 	char *full_path = NULL;
 
 	int p =0;
@@ -1445,7 +1452,7 @@ void vdPipeExecFunc(int pipenum ,char **token , int lenth)
 		pipeFd[k+1] = temp;
 		k=k+2;
 	}
-
+	
 	// Now we will start to loop on the all tokens 
 	// don't forget according to the above example " ls | grep out | sort "
 	// =====================================================================================
@@ -1476,7 +1483,7 @@ void vdPipeExecFunc(int pipenum ,char **token , int lenth)
 			
 			// Now we will start forking and if we have two pipes >> three commands 
 			// so we will have 3 commands with 3 forks 
-			int retPid = fork();
+			retPid = fork();
 
 			//child part
 			if(retPid == 0)
@@ -1537,7 +1544,9 @@ void vdPipeExecFunc(int pipenum ,char **token , int lenth)
 			else{
 				// the "j" variable refers to the "|" 
 				// and "strcmd" have the index of the command so it will be equal (j+1)
+				startCommarr = (int *)realloc(startCommarr,(k+1)*sizeof(int));
 				strcmd = j + 1;
+				startCommarr[t++] = strcmd;
 				//we said that "p" varible loops on the file discreptors array 
 				//we increase it on the parent to be seen on the parent and the children
                         	p = p+2;
@@ -1554,8 +1563,15 @@ void vdPipeExecFunc(int pipenum ,char **token , int lenth)
 	{
 		close(pipeFd[i]);
 	}
+	int i =0;
+	retPid = wait(&status);
 	//loop untill all children finish thier work
-	while(wait(NULL)!=-1);
+	do{
+		vdAddChildInfo(getpid(),retPid,token[startCommarr[i++]],status);
+		retPid = wait(&status);
+	}
+	while(retPid!=-1);
+	free(startCommarr);
 
 }
 
