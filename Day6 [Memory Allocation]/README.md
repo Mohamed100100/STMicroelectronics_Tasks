@@ -11,11 +11,37 @@ This project implements a simple Heap Memory Manager (HMM) in C that provides dy
 - **Simulated Heap Management**: Simulate heap operations without kernel dependencies for easier debugging and testing.
 - **Memory Optimization**: Minimize heap size increments/decrements to reduce overhead and improve performance.
 ---
-## Installation and Compilation
-To compile the project, you can use the provided Makefile or manually compile the code using the following command:
 
+Here’s the updated section for **Installation and Compilation** in your README:
+
+---
+
+## Installation and Compilation
+
+### Option 1: Using the Makefile
+
+The project includes a `Makefile` to simplify the compilation process. Follow these steps:
+
+1. **Clean the Build Environment**: Remove any existing compiled files by running:
+   ```bash
+   make clean
+   ```
+
+2. **Compile the Program**: Use the `make` command to compile the program:
+   ```bash
+   make
+   ```
+
+3. **Run the Program**: After compiling, you can run the program with the following command:
+   ```bash
+   ./heap_test
+   ```
+
+### Option 2: Manual Compilation
+
+If you prefer to compile the project manually without using the `Makefile`, you can do so with the following 
 ```bash
-gcc  heap.c heap.h heap_mytst.c  heap_test
+gcc  heap.c heap.h heap_mytst.c -o heap_test
 ```
 
 Run the program:
@@ -121,7 +147,7 @@ The project includes two test programs
 - that simulates random allocation and deallocation scenarios. You can run this program to verify the correctness of the HMM implementation.
 - You can run this program to verify the correctness of the HMM implementation 
 ```bash
-gcc  heap.c heap.h  stress_test.c  heap_test
+gcc  heap.c heap.h  stress_test.c  -o heap_test
 ```
 
 Run the program:
