@@ -162,7 +162,7 @@ Run the program:
 
 - You can run this program to verify the correctness of the HMM implementation(But don't forget to set the "DEPUG" Macro with "ON")
 ```bash
-gcc  heap.c heap.h heap_mytst.c  heap_test
+gcc  heap.c heap.h heap_mytst.c -o heap_test
 ```
 
 Run the program:
