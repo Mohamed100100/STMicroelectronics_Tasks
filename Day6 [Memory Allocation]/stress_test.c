@@ -8,7 +8,7 @@
 #define MAX_ITERATIONS 1000000
 
 void random_alloc_free_test() {
-	vdDisplayPrgBrk();
+	// vdDisplayPrgBrk();
     srand((unsigned int)time(NULL));
     
     void* pointers[NUM_ALLOCS] = {NULL};
