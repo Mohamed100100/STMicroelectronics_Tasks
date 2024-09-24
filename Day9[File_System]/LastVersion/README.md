@@ -145,7 +145,7 @@ file2  dir1  file1
 ## 4. Screenshots of Output
 
 ### Example 1: Basic listing with color:
-![Basic listing with color](https://drive.google.com/file/d/107U0AUGoA2QLUpCbA_Vqr7Oh9MnoYEba/view?usp=sharing)
+![Basic listing with color](./LongFormat)
 
 ### Example 2: Long listing format (`-l`) with inode numbers (`-i`) with color (`--color`) with hidden files (`-a`):
 ![Long listing with inode numbers](https://drive.google.com/file/d/1L3OA79Plb-xN11WTDGwgrzTC-KM0ATWl/view?usp=sharing)
