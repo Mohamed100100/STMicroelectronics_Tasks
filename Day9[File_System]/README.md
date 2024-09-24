@@ -3,7 +3,7 @@
 
 ## Overview
 
-This is a custom implementation of the `ls` command, which is widely used to list directory contents in UNIX-like operating systems. This version of `ls` supports several options including `-latucifd1`, and can organize output in a table format. A bonus feature of `--color` support is also included.
+This is a custom implementation of the `ls` command, which is widely used to list directory contents in UNIX-like operating systems. This version of `ls` supports several options including `-latucifd1`, and can organize output in a table format.
 
 ## Features
 
